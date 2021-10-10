@@ -1,0 +1,33 @@
+docker exec -it namenode bash
+
+hdfs dfs -mkdir /m.a.gashkov_folder
+hdfs dfs -mkdir /m.a.gashkov_folder/folder_2
+
+Hadoop предусматривает папку .trash, в которой хранятся недавно удалённые файлы. Это сделано, чтобы вы случайно не удалили нужные файлы. Пока файлы находится в этой папке, его можно восстановить.
+Файлы хранятся в папке .trash время, которое определяется параметром fs.trash.interval, хранящемся в core-site.xml.
+Чтобы сразу удалить файл, нужно выполнить
+hdfs dfs -rm -skipTrash <FILE>
+
+hdfs dfs -touchz /m.a.gashkov_folder/folder_2/new_file.txt
+hdfs dfs -rm -skipTrash /m.a.gashkov_folder/folder_2/new_file.txt
+hdfs dfs -rm -R /m.a.gashkov_folder
+
+---------
+Разные команды для перемещения и копирования
+
+hdfs dfs -mkdir /folder
+hdfs dfs -put 2_actions.txt /folder
+hdfs dfs -cat /folder/2_actions.txt
+hdfs dfs -tail /folder/2_actions.txt
+hdfs dfs -cp /folder/2_actions.txt /
+hdfs dfs -mv /folder/2_actions.txt /
+
+---
+
+hdfs dfs -setrep -w 1 /2_actions.txt
+/ Уменьшение кол-во реплик произошло быстро, несмотря на предупреждение о возможно долгой работе операции
+hdfs dfs -setrep -w 3 /2_actions.txt
+/ Изменение числа реплик для маленького файла заняло порядка 15 секунд
+hdfs fsck / -files -blocks -locations
+/ Нашел информацию
+hdfs fsck / -files -blocks -locations -blockId blk_1073741827
