@@ -1,0 +1,104 @@
+CREATE DATABASE IF NOT EXISTS artist;
+
+CREATE EXTERNAL TABLE IF NOT EXISTS artist.artists(
+mbid STRING,
+artist_mb STRING,
+artist_lastfm STRING,
+country_mb STRING,
+country_lastfm STRING,
+tags_mb STRING,
+tags_lastfm STRING,
+listeners_lastfm INT,
+scrobbles_lastfm INT,
+ambiguous_artist STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+
+LOAD DATA INPATH '/artists.csv' INTO TABLE artist.artists;
+
+# Check if is ok
+SELECT * FROM artist.artists;
+
+Используя Hive найти (команды и результаты записать в файл и добавить в репозиторий):
+a) Исполнителя с максимальным числом скробблов - 5 баллов
+
+SELECT * FROM artist.artists
+WHERE artist_lastfm is NOT NULL
+AND scrobbles_lastfm is NOT NULL
+SORT BY scrobbles_lastfm DESC;
+
+The Beatles, Radihead, Coldplay
+
+b) Самый популярный тэг на ластфм - 10 баллов
+
+SELECT tags, count(*) AS cnt
+FROM artist.artists
+LATERAL VIEW explode(split(tags_lastfm, ';')) tags_lastfm as tags
+GROUP BY tags
+ORDER BY cnt DESC
+
+seen live, rock, electronic
+
+c) Самые популярные исполнители 10 самых популярных тегов ластфм - 10 баллов
+
+2 часа просидел и так и не понял, как это сделать в 1 запрос. Поэтому выполнил последовательно 2 запросами
+
+WITH TAGS1 AS (
+    SELECT tags, count(*) AS cnt
+        FROM artist.artists
+        LATERAL VIEW explode(split(tags_lastfm, ';')) tags_lastfm as tags
+        GROUP BY tags
+        ORDER BY cnt DESC
+        LIMIT 11
+) SELECT tags FROM TAGS1
+
+Получил (первый тег пустой - его опустим)
+'seen live', 'rock', 'electronic', 'All', 'under 2000 listeners', 'alternative', 'pop', 'indie', 'experimental', 'female vocalists'
+
+Второй запрос
+SELECT artist_lastfm, listeners_lastfm, tags
+FROM artist.artists
+LATERAL VIEW explode(split(tags_lastfm, ';')) tags_lastfm as tags
+WHERE tags in ('seen live', 'rock', 'electronic', 'All', 'under 2000 listeners', 'alternative', 'pop', 'indie', 'experimental', 'female vocalists')
+ORDER BY listeners_lastfm DESC
+
+Coldplay, Radiohead, Red Hot Chilli Peppers
+
+
+d) Любой другой инсайт на ваше усмотрение - 10 баллов
+
+Выведите по 3 самых популярных (по числу скробблов) артистов из Великобритании, США, Франции и Индии
+
+SELECT artist_lastfm, scrobbles_lastfm
+FROM artist.artists
+WHERE country_lastfm = 'United Kingdom'
+ORDER BY scrobbles_lastfm DESC
+LIMIT 3
+
+The Beatles, Radiohead, Coldplay
+
+SELECT artist_lastfm, scrobbles_lastfm
+FROM artist.artists
+WHERE country_lastfm = 'United States'
+ORDER BY scrobbles_lastfm
+LIMIT 3
+
+Linkin Park, Red Hot Chili Peppers, Lady Gaga
+
+SELECT artist_lastfm, scrobbles_lastfm
+FROM artist.artists
+WHERE country_lastfm = 'France'
+ORDER BY scrobbles_lastfm
+LIMIT 3
+
+Daft Punk, David Guetta, Air
+
+SELECT DISTINCT artist_lastfm, scrobbles_lastfm
+FROM artist.artists
+WHERE country_lastfm = 'India'
+ORDER BY scrobbles_lastfm DESC
+LIMIT 3
+
+A.R. Rahman, Ravi Shankar, Skyharbor
