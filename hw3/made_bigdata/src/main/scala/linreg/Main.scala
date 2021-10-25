@@ -21,10 +21,12 @@ object Main {
     val y_test = vec_test(::, 10)
 // Формулу взял отсюда http://www.machinelearning.ru/wiki/index.php?title=Линейная_регрессия_%28пример%29
     val ones_vector = DenseMatrix.ones[Double](rows = x_train.rows, cols = 1)
-    val A = DenseMatrix.horzcat(ones_vector, x_train)
-    val ws0 = inv(A.t * A)
-    val ws1 = ws0 * A.t
-    val w = ws1 * y_train
+    val A: DenseMatrix[Double] = DenseMatrix.horzcat(ones_vector, x_train)
+    println(A)
+    val ws0 = A.t * A
+    val ws1 = inv(ws0)
+    val ws2 = ws1 * A.t
+    val w = ws2 * y_train
     println(w)
 
 //    Теперь оценим, как эта формула работает на тестовых данных, и какая получилась SSE ошибка
